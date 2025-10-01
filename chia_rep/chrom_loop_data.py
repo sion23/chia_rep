@@ -296,7 +296,10 @@ class ChromLoopData:
                                        chrom_name=self.name, stat='max_index')
 
         # Get peak value for every anchor interval
-        start_list_peaks = bedgraph.stats(start_list=self.start_anchor_list[0],
+        # Note that the "peak" here is NOT referring to the peak called output but rather
+        # just referring to the binding affinity signal as a peak
+         # The above extracts the stat='max_index' but this extracts the signal value itself: stat='max'
+        start_list_peaks = bedgraph.stats(start_list=self.start_anchor_list[0], 
                                           end_list=self.start_anchor_list[1],
                                           chrom_name=self.name, stat='max')
         end_list_peaks = bedgraph.stats(start_list=self.end_anchor_list[0],
