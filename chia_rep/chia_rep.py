@@ -79,6 +79,7 @@ def compare(
     compare_list_file: str = None,
     output_dir: str = 'output',
     window_size: int = 3000000,
+    window_stride: int = 1,
     bin_size: int = 5000,
     do_output_graph: bool = False
 ) -> (score_dict, score_dict):
@@ -167,7 +168,7 @@ def compare(
         if sample1.species_name != sample2.species_name:
             log.error('Tried to compare two different species. Skipping')
 
-        value_dict = sample1.compare(sample2, window_size, bin_size, num_peaks,
+        value_dict = sample1.compare(sample2, window_size, window_stride, bin_size, num_peaks,
                                      output_dir=output_dir,
                                      do_output_graph=do_output_graph)
 

@@ -318,6 +318,7 @@ class GenomeLoopData:
         self,
         o_loop_data: 'GenomeLoopData',
         window_size: int,
+        window_stride: int,
         bin_size: int,
         num_peaks: any,
         chroms_to_compare: List[str] = None,
@@ -339,6 +340,11 @@ class GenomeLoopData:
         window_size : int
             Splits the chromosome into ceil(chrom_size / window_size) windows.
             Loops that start in one window and end in another are filter out.
+        window_stride : int
+            The size factor of the window_size (1 / window_stride) that is the 
+            stride of the sliding window. For example, if window_stride is 1,
+            the windows do not overlap. If window_stride is 2, the windows
+            overlap by half. If window_stride is 3, the windows overlap by 2/3
         bin_size : int
             Splits each window into window_size / bin_size bins which determines
             the start and end of each loop
@@ -355,6 +361,11 @@ class GenomeLoopData:
         dict[str, float]
             Contains comparison values based on EMD and Jensen-Shannon formulas
         """
+        if window_size % window_stride != 0:
+            raise ValueError(
+                "window_size must be divisible by window_stride so that `step = window_size / window_stride` is integer"
+            )
+
         # Default: Compare all the chromosomes
         if chroms_to_compare is None:
             chroms_to_compare = list(self.chrom_dict.keys())
@@ -391,7 +402,18 @@ class GenomeLoopData:
             log.info(f"Comparing {chrom_name} ...")
             chrom_size = self.chrom_dict[chrom_name].size
             value_dict_list = []  # Contains comparison values for each window
-            numb_windows = math.ceil(chrom_size / window_size)
+            # numb_windows = math.ceil(chrom_size / window_size)
+
+            step = window_size // window_stride
+
+            if chrom_size < window_size:
+                numb_windows = 1
+            else:
+                numb_windows = np.floor((chrom_size - window_size) / step).astype(int) + 1
+
+            if (chrom_size - window_size) % step != 0:
+                numb_windows += 1
+
             window_starts = []
             window_ends = []
 
@@ -402,10 +424,17 @@ class GenomeLoopData:
 
             # Compare all windows in chromosome
             for k in range(numb_windows):
-                window_start = window_size * k
-                window_end = window_size * (k + 1)
+                window_start = step * k
+                # window_end = window_size * (k + 1)
+                window_end = window_start + window_size
+
+                
                 if window_end > chrom_size:
                     window_end = chrom_size
+
+                if window_start >= chrom_size:
+                    break
+
                 window_starts.append(window_start)
                 window_ends.append(window_end)
 

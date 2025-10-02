@@ -483,6 +483,7 @@ class ChromLoopData:
         self,
         loops: list,
         bin_size: int,
+        window_start: int,
         window_size: int,
         random: bool = False,
         num_loops: int = 0
@@ -495,6 +496,9 @@ class ChromLoopData:
         loops : list
             List of loop indexes from self.filtered_*
         bin_size : int
+        window_start : int
+            Added to compute the proper loop start and end index with respect to the 
+            adjacency matrix indices
         window_size : int
         random : bool, optional
             Randomly pick which loops to use (Default is False)
@@ -531,8 +535,11 @@ class ChromLoopData:
             orig_start = start
             orig_end = end
 
-            start = start % window_size
-            end = end % window_size
+            # start = start % window_size
+            # end = end % window_size
+            # This is more robust
+            start = start - window_start
+            end = end - window_start
 
             bin_start = int(start / bin_size)
             bin_end = int(end / bin_size)
@@ -691,10 +698,10 @@ class ChromLoopData:
             The start of the window
         window_end : int
             The end of the window
+        window_size : int
+            Need this to save to a consistent output folder with parameter name
         bin_size : int
             Determines which loops are the same by putting them into bins
-        window_size : int
-            Needed to find the exact loop start/end index in this graph
         num_peaks : any
         output_dir : str, optional
             Directory to output data
@@ -724,7 +731,7 @@ class ChromLoopData:
             'w': 0
         }
 
-        if window_end > self.size:
+        if window_end > self.size: # chromosome size
             window_end = self.size
 
         if window_start >= self.size:
@@ -750,8 +757,9 @@ class ChromLoopData:
             log.debug('No loops in either sample')
         else:
             # Make graphs using all loops in the window
-            graph = self.create_graph(loops, bin_size, window_size)
-            o_graph = o_chrom.create_graph(o_loops, bin_size, window_size)
+            eff_window_size = window_end - window_start
+            graph = self.create_graph(loops, bin_size, window_start, eff_window_size)
+            o_graph = o_chrom.create_graph(o_loops, bin_size, window_start, eff_window_size)
 
             comparison_name = f'{self.sample_name}_{o_chrom.sample_name}'
             param_str = f'{window_size}.{bin_size}.{num_peaks}'
